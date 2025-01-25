@@ -1,6 +1,5 @@
 streamlit
 pandas
 openpyxl
-zipfile
 pathlib
 pip
