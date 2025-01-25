@@ -13,37 +13,47 @@ def process_files(excel_file, zip_file):
     st.write("Preview of Excel File:")
     st.dataframe(sheet.head())
 
-    if 'Label' not in sheet.columns or 'District' not in sheet.columns:
-        st.error("The Excel file must contain 'Label' and 'District' columns.")
-        return
+    # Check if required columns exist
+    required_columns = ['State Name', 'District Name', 'Label Number 1', 'Label Number 2', 'Label Number 3', 'Label Number 4']
+    for col in required_columns:
+        if col not in sheet.columns:
+            st.error(f"The Excel file must contain the '{col}' column.")
+            return
 
     # Step 2: Unzip the uploaded ZIP file
-    output_dir = "temp_unzipped"
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
+    temp_folder = "temp_unzipped"
+    if os.path.exists(temp_folder):
+        shutil.rmtree(temp_folder)
     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-        zip_ref.extractall(output_dir)
+        zip_ref.extractall(temp_folder)
 
     st.write("ZIP file extracted successfully!")
 
-    # Step 3: Organize PDFs by district
+    # Step 3: Organize PDFs by state and district
     organized_dir = "organized_pdfs"
     if os.path.exists(organized_dir):
         shutil.rmtree(organized_dir)
 
     os.makedirs(organized_dir, exist_ok=True)
-    pdf_folder = Path(output_dir)
+    pdf_folder = Path(temp_folder)
     pdf_files = {f.name: f for f in pdf_folder.glob("*.pdf")}
 
     for _, row in sheet.iterrows():
-        label = row['Label']
-        district = row['District']
-        pdf_name = f"{label}.pdf"
+        state = row['State Name']
+        district = row['District Name']
+        label_columns = ['Label Number 1', 'Label Number 2', 'Label Number 3', 'Label Number 4']
 
-        if pdf_name in pdf_files:
-            district_dir = Path(organized_dir) / district
-            district_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(pdf_files[pdf_name], district_dir / pdf_name)
+        # Create state and district directories
+        state_dir = Path(organized_dir) / state
+        district_dir = state_dir / district
+        district_dir.mkdir(parents=True, exist_ok=True)
+
+        for col in label_columns:
+            if pd.notna(row[col]):  # Check if the label exists
+                pdf_name = f"{row[col]}.pdf"
+                if pdf_name in pdf_files:
+                    # Copy the PDF to the district folder
+                    shutil.copy(pdf_files[pdf_name], district_dir / pdf_name)
 
     # Step 4: Zip organized folder
     zip_output = "organized_pdfs.zip"
@@ -55,8 +65,8 @@ def process_files(excel_file, zip_file):
     return zip_output
 
 # Streamlit UI
-st.title("Organize PDFs by District")
-st.write("Upload an Excel file and a ZIP file containing PDFs to organize them by district.")
+st.title("Organize PDFs by State and District")
+st.write("Upload an Excel file and a ZIP file containing PDFs to organize them by state and district.")
 
 # File upload widgets
 uploaded_excel = st.file_uploader("Upload Excel File", type=['xlsx'])
