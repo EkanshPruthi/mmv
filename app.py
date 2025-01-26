@@ -14,7 +14,7 @@ def ensure_directory(directory):
 def organize_files(excel_file, zip_file):
     # Step 1: Save uploaded Excel file
     with open("uploaded_excel.xlsx", "wb") as f:
-        f.write(excel_file.read())
+        f.write(excel_file.getbuffer())  # Use getbuffer() to write BytesIO content
     
     # Step 2: Read the Excel file
     data = pd.read_excel("uploaded_excel.xlsx")
@@ -30,10 +30,10 @@ def organize_files(excel_file, zip_file):
     temp_pdf_folder = "temp_pdfs"
     ensure_directory(temp_pdf_folder)
 
-    # Save and extract the uploaded ZIP file
+    # Save the uploaded ZIP file to disk and extract its contents
     zip_file_path = "uploaded_pdfs.zip"
     with open(zip_file_path, "wb") as f:
-        f.write(zip_file.read())
+        f.write(zip_file.getbuffer())  # Use getbuffer() for BytesIO-like objects
     
     with ZipFile(zip_file_path, 'r') as zip_ref:
         zip_ref.extractall(temp_pdf_folder)
@@ -84,12 +84,7 @@ uploaded_zip = st.file_uploader("Upload ZIP File of PDFs", type=["zip"])
 
 if uploaded_excel and uploaded_zip:
     with st.spinner("Processing files..."):
-        # Save the uploaded ZIP file
-        zip_file_path = "uploaded_pdfs.zip"
-        with open(zip_file_path, "wb") as f:
-            f.write(uploaded_zip.read())
-
-        output_zip = organize_files(uploaded_excel, zip_file_path)
+        output_zip = organize_files(uploaded_excel, uploaded_zip)
 
         if output_zip:
             st.success("Files organized successfully!")
