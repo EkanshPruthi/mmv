@@ -37,12 +37,12 @@ def organize_files(excel_file, zip_file):
 
     # Log ZIP contents and extract only PDF files
     with ZipFile(zip_file_path, 'r') as zip_ref:
-        st.write("Files in ZIP:", zip_ref.namelist())  # Log all files in the ZIP
+        #st.write("Files in ZIP:", zip_ref.namelist())  # Log all files in the ZIP
         for file in zip_ref.namelist():
             if file.endswith(".pdf"):  # Only process .pdf files
                 file_name = os.path.basename(file)  # Extract file name
                 with open(os.path.join(temp_pdf_folder, file_name), "wb") as f:
-                    f.write(zip_ref.read(file))
+                    #f.write(zip_ref.read(file))
 
     # Log extracted files for debugging
     #extracted_files = [f.name for f in Path(temp_pdf_folder).glob("*.pdf")]
