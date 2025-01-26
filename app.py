@@ -11,7 +11,7 @@ def ensure_directory(directory):
         os.makedirs(directory)
 
 # Organize files into state-wise and district-wise folders
-def organize_files(excel_file, uploaded_pdfs):
+def organize_files(excel_file, zip_file):
     # Step 1: Save uploaded Excel file
     with open("uploaded_excel.xlsx", "wb") as f:
         f.write(excel_file.read())
@@ -26,17 +26,16 @@ def organize_files(excel_file, uploaded_pdfs):
             st.error(f"Missing required column: {col}")
             return None
 
-    # Step 3: Save uploaded PDFs
-    pdf_folder = "temp_pdfs"
-    ensure_directory(pdf_folder)
-    for uploaded_file in uploaded_pdfs:
-        with open(os.path.join(pdf_folder, uploaded_file.name), "wb") as f:
-            f.write(uploaded_file.getbuffer())
-
+    # Step 3: Extract PDFs from the uploaded ZIP file
+    temp_pdf_folder = "temp_pdfs"
+    ensure_directory(temp_pdf_folder)
+    with ZipFile(zip_file, 'r') as zip_ref:
+        zip_ref.extractall(temp_pdf_folder)
+    
     # Step 4: Organize PDFs into folders
     organized_folder = "Organized_Files"
     ensure_directory(organized_folder)
-    pdf_files = {f.name: f for f in Path(pdf_folder).glob("*.pdf")}
+    pdf_files = {f.name: f for f in Path(temp_pdf_folder).glob("*.pdf")}
 
     for _, row in data.iterrows():
         state = row["State Name"]
@@ -69,15 +68,20 @@ def organize_files(excel_file, uploaded_pdfs):
 
 # Streamlit UI
 st.title("Organize PDFs by State and District")
-st.write("Upload an Excel file and multiple PDF files to organize them by state and district.")
+st.write("Upload an Excel file and a ZIP file containing PDFs to organize them by state and district.")
 
 # File upload widgets
 uploaded_excel = st.file_uploader("Upload Excel File", type=["xlsx"])
-uploaded_pdfs = st.file_uploader("Upload PDF Files", type=["pdf"], accept_multiple_files=True)
+uploaded_zip = st.file_uploader("Upload ZIP File of PDFs", type=["zip"])
 
-if uploaded_excel and uploaded_pdfs:
+if uploaded_excel and uploaded_zip:
     with st.spinner("Processing files..."):
-        output_zip = organize_files(uploaded_excel, uploaded_pdfs)
+        # Save the uploaded ZIP file
+        zip_file_path = "uploaded_pdfs.zip"
+        with open(zip_file_path, "wb") as f:
+            f.write(uploaded_zip.read())
+
+        output_zip = organize_files(uploaded_excel, zip_file_path)
 
         if output_zip:
             st.success("Files organized successfully!")
