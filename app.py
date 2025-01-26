@@ -45,15 +45,15 @@ def organize_files(excel_file, zip_file):
                     f.write(zip_ref.read(file))
 
     # Log extracted files for debugging
-    extracted_files = [f.name for f in Path(temp_pdf_folder).glob("*.pdf")]
-    st.write("Extracted Files:", extracted_files)
+    #extracted_files = [f.name for f in Path(temp_pdf_folder).glob("*.pdf")]
+    #st.write("Extracted Files:", extracted_files)
 
     # Step 4: Organize PDFs into folders
     organized_folder = "Organized_Files"
     ensure_directory(organized_folder)
     pdf_files = {f.name: f for f in Path(temp_pdf_folder).glob("*.pdf")}  # Case-sensitive match
 
-    st.write("Labels in Excel:", data[["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]].dropna().values.flatten())
+    #st.write("Labels in Excel:", data[["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]].dropna().values.flatten())
 
     for _, row in data.iterrows():
         state = row["State Name"]
