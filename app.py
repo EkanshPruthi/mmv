@@ -56,8 +56,8 @@ def organize_files(excel_file, zip_file):
         district_folder.mkdir(parents=True, exist_ok=True)
 
         for col in label_columns:
-            if pd.notna(row[col]):
-                pdf_name = f"{row[col]}.pdf"
+            if pd.notna(row[col]):  # Check if the label exists
+                pdf_name = row[col]  # Directly use the label from Excel without appending .pdf
                 if pdf_name in pdf_files:
                     shutil.copy(pdf_files[pdf_name], district_folder / pdf_name)
                 else:
@@ -84,7 +84,12 @@ uploaded_zip = st.file_uploader("Upload ZIP File of PDFs", type=["zip"])
 
 if uploaded_excel and uploaded_zip:
     with st.spinner("Processing files..."):
-        output_zip = organize_files(uploaded_excel, uploaded_zip)
+        # Save the uploaded ZIP file
+        zip_file_path = "uploaded_pdfs.zip"
+        with open(zip_file_path, "wb") as f:
+            f.write(uploaded_zip.read())
+
+        output_zip = organize_files(uploaded_excel, zip_file_path)
 
         if output_zip:
             st.success("Files organized successfully!")
