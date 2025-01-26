@@ -14,7 +14,7 @@ def ensure_directory(directory):
 def organize_files(excel_file, zip_file):
     # Step 1: Save uploaded Excel file
     with open("uploaded_excel.xlsx", "wb") as f:
-        f.write(excel_file.getbuffer())  # Use getbuffer() to write BytesIO content
+        f.write(excel_file.getbuffer())
     
     # Step 2: Read the Excel file
     data = pd.read_excel("uploaded_excel.xlsx")
@@ -30,20 +30,24 @@ def organize_files(excel_file, zip_file):
     temp_pdf_folder = "temp_pdfs"
     ensure_directory(temp_pdf_folder)
 
-    # Save the uploaded ZIP file to disk and extract its contents
+    # Save and extract the uploaded ZIP file
     zip_file_path = "uploaded_pdfs.zip"
     with open(zip_file_path, "wb") as f:
-        f.write(zip_file.getbuffer())  # Use getbuffer() for BytesIO-like objects
+        f.write(zip_file.getbuffer())
     
     with ZipFile(zip_file_path, 'r') as zip_ref:
         zip_ref.extractall(temp_pdf_folder)
     
-    st.write(f"Extracted PDFs to: {temp_pdf_folder}")
+    # Log extracted files for debugging
+    extracted_files = [f.name for f in Path(temp_pdf_folder).glob("*.pdf")]
+    st.write("Extracted Files:", extracted_files)
 
     # Step 4: Organize PDFs into folders
     organized_folder = "Organized_Files"
     ensure_directory(organized_folder)
-    pdf_files = {f.name: f for f in Path(temp_pdf_folder).glob("*.pdf")}
+    pdf_files = {f.name: f for f in Path(temp_pdf_folder).glob("*.pdf")}  # Case-sensitive match
+
+    st.write("Labels in Excel:", data[["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]].dropna().values.flatten())
 
     for _, row in data.iterrows():
         state = row["State Name"]
@@ -57,7 +61,7 @@ def organize_files(excel_file, zip_file):
 
         for col in label_columns:
             if pd.notna(row[col]):  # Check if the label exists
-                pdf_name = row[col]  # Directly use the label from Excel without appending .pdf
+                pdf_name = row[col].strip()  # Trim spaces
                 if pdf_name in pdf_files:
                     shutil.copy(pdf_files[pdf_name], district_folder / pdf_name)
                 else:
