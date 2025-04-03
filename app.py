@@ -12,13 +12,23 @@ def ensure_directory(directory):
 
 # Organize files into state-wise and district-wise folders
 def organize_files(excel_file, zip_file):
+    # Clean up folders from previous runs
+    if os.path.exists("Organized_Files"):
+        shutil.rmtree("Organized_Files")
+    if os.path.exists("temp_pdfs"):
+        shutil.rmtree("temp_pdfs")
+    if os.path.exists("uploaded_excel.xlsx"):
+        os.remove("uploaded_excel.xlsx")
+    if os.path.exists("uploaded_pdfs.zip"):
+        os.remove("uploaded_pdfs.zip")
+
     # Step 1: Save uploaded Excel file
     with open("uploaded_excel.xlsx", "wb") as f:
         f.write(excel_file.getbuffer())
     
     # Step 2: Read the Excel file
     data = pd.read_excel("uploaded_excel.xlsx")
-    required_columns = ["State Name", "District Name","Type Name", "Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
+    required_columns = ["State Name", "District Name", "Type Name", "Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
 
     # Validate Excel columns
     for col in required_columns:
@@ -35,40 +45,35 @@ def organize_files(excel_file, zip_file):
     with open(zip_file_path, "wb") as f:
         f.write(zip_file.getbuffer())
 
-    # Log ZIP contents and extract only PDF files
     with ZipFile(zip_file_path, 'r') as zip_ref:
-        #st.write("Files in ZIP:", zip_ref.namelist())  # Log all files in the ZIP
         for file in zip_ref.namelist():
-            if file.endswith(".pdf"):  # Only process .pdf files
-                file_name = os.path.basename(file)  # Extract file name
-                with open(os.path.join(temp_pdf_folder, file_name), "wb") as f:
-                    f.write(zip_ref.read(file))
-
-    # Log extracted files for debugging
-    #extracted_files = [f.name for f in Path(temp_pdf_folder).glob("*.pdf")]
-    #st.write("Extracted Files:", extracted_files)
+            if file.endswith(".pdf") and not file.endswith("/"):
+                file_name = os.path.basename(file)
+                if file_name:  # skip empty names
+                    with open(os.path.join(temp_pdf_folder, file_name), "wb") as f:
+                        f.write(zip_ref.read(file))
 
     # Step 4: Organize PDFs into folders
     organized_folder = "Organized_Files"
     ensure_directory(organized_folder)
-    pdf_files = {f.name: f for f in Path(temp_pdf_folder).glob("*.pdf")}  # Case-sensitive match
-
-    #st.write("Labels in Excel:", data[["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]].dropna().values.flatten())
+    pdf_files = {f.name: f for f in Path(temp_pdf_folder).glob("*.pdf")}
 
     for _, row in data.iterrows():
-        state = row["State Name"]
-        district = row["District Name"]
-        label_columns = ["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
-        set = row["Type Name"]
+        state = str(row["State Name"]).strip()
+        district = str(row["District Name"]).strip()
+        set_name = str(row["Type Name"]).strip()
 
-        # Create state and district folders
-        # Create only the full path up to 'set' folder (State/District/Type Name)
-        set_folder = Path(organized_folder) / state.strip() / district.strip() / set.strip()
+        # Create only the set-level folder
+        set_folder = Path(organized_folder) / state / district / set_name
         set_folder.mkdir(parents=True, exist_ok=True)
 
+        label_columns = ["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
         for col in label_columns:
-            if pd.notna(row[col]):  # Check if the label exists
-                pdf_name = row[col].strip()  # Trim spaces
+            if pd.notna(row[col]):
+                pdf_name = str(row[col]).strip()
+                if not pdf_name.lower().endswith(".pdf"):
+                    pdf_name += ".pdf"
+
                 if pdf_name in pdf_files:
                     shutil.copy(pdf_files[pdf_name], set_folder / pdf_name)
                 else:
@@ -87,7 +92,7 @@ def organize_files(excel_file, zip_file):
 
 # Streamlit UI
 st.title("Organize PDFs by State and District")
-st.write("Upload an Excel file and a ZIP file containing PDFs to organize them by state and district.")
+st.write("Upload an Excel file and a ZIP file containing PDFs to organize them by state, district, and type name.")
 
 # File upload widgets
 uploaded_excel = st.file_uploader("Upload Excel File", type=["xlsx"])
