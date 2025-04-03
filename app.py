@@ -62,9 +62,8 @@ def organize_files(excel_file, zip_file):
         set = row["Type Name"]
 
         # Create state and district folders
-        state_folder = Path(organized_folder) / state
-        district_folder = state_folder / district
-        set_folder = district_folder/ set
+        # Create only the full path up to 'set' folder (State/District/Type Name)
+        set_folder = Path(organized_folder) / state.strip() / district.strip() / set.strip()
         set_folder.mkdir(parents=True, exist_ok=True)
 
         for col in label_columns:
