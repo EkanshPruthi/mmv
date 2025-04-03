@@ -18,7 +18,7 @@ def organize_files(excel_file, zip_file):
     
     # Step 2: Read the Excel file
     data = pd.read_excel("uploaded_excel.xlsx")
-    required_columns = ["State Name", "District Name", "Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
+    required_columns = ["State Name", "District Name","Type Name", "Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
 
     # Validate Excel columns
     for col in required_columns:
@@ -59,17 +59,19 @@ def organize_files(excel_file, zip_file):
         state = row["State Name"]
         district = row["District Name"]
         label_columns = ["Label Number 1", "Label Number 2", "Label Number 3", "Label Number 4"]
+        type = row["Type Name"]
 
         # Create state and district folders
         state_folder = Path(organized_folder) / state
         district_folder = state_folder / district
-        district_folder.mkdir(parents=True, exist_ok=True)
+        type_folder = district_folder/ type
+        type_folder.mkdir(parents=True, exist_ok=True)
 
         for col in label_columns:
             if pd.notna(row[col]):  # Check if the label exists
                 pdf_name = row[col].strip()  # Trim spaces
                 if pdf_name in pdf_files:
-                    shutil.copy(pdf_files[pdf_name], district_folder / pdf_name)
+                    shutil.copy(pdf_files[pdf_name], type_folder / pdf_name)
                 else:
                     st.warning(f"File not found: {pdf_name}")
 
